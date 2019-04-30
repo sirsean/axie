@@ -253,6 +253,7 @@
                    (assoc t
                           :ready? (team-can-battle? t)
                           :ready-in (team-ready-in t))))
+    (partial sort-by :ready-in)
     (fn [teams]
       (if show-all-fields
         teams
