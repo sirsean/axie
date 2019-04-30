@@ -285,6 +285,23 @@
             (fn [& _]
               (md/recur more))))))))
 
+(defn fetch-matches
+  []
+  (md/chain
+    (http/get "https://api.axieinfinity.com/v1/battle/history/matches"
+              {:headers {"Authorization" (format "Bearer %s" (cfg/get :token))}})
+    body->json
+    :matches
+    (partial map (fn [{:keys [winner loser]}]
+                   {:winner (:team-name winner)
+                    :winner-user (:name winner)
+                    :winner-rating (:delta-rating winner)
+                    :loser (:team-name loser)
+                    :loser-user (:name loser)
+                    :loser-rating (:delta-rating loser)
+                    :you-win? (= (string/lower-case (cfg/get :eth-addr))
+                                 (string/lower-case (:address winner)))}))))
+
 (defn fetch-axie
   [id]
   (md/chain
