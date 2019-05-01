@@ -292,8 +292,9 @@
               {:headers {"Authorization" (format "Bearer %s" (cfg/get :token))}})
     body->json
     :matches
-    (partial map (fn [{:keys [winner loser]}]
-                   {:winner (:team-name winner)
+    (partial map (fn [{:keys [id winner loser]}]
+                   {:id id
+                    :winner (:team-name winner)
                     :winner-user (:name winner)
                     :winner-rating (:delta-rating winner)
                     :loser (:team-name loser)
