@@ -60,11 +60,9 @@
           bigdec
           (* 1e-18M)))
 
-(defn attach-prices
-  [axies]
-  (->> axies
-       (map (fn [a]
-              (assoc a :price (calc-price a))))))
+(defn attach-price
+  [axie]
+  (assoc axie :price (calc-price axie)))
 
 (defn calc-purity
   [{:keys [class] :as axie}]
@@ -75,10 +73,8 @@
        count))
 
 (defn attach-purity
-  [axies]
-  (map (fn [a]
-         (assoc a :purity (calc-purity a)))
-       axies))
+  [axie]
+  (assoc axie :purity (calc-purity axie)))
 
 (defn calc-attack
   [axie]
@@ -89,10 +85,8 @@
        (apply +)))
 
 (defn attach-attack
-  [axies]
-  (map (fn [a]
-         (assoc a :attack (calc-attack a)))
-       axies))
+  [axie]
+  (assoc axie :attack (calc-attack axie)))
 
 (defn calc-defense
   [axie]
@@ -103,18 +97,20 @@
        (apply +)))
 
 (defn attach-defense
-  [axies]
-  (map (fn [a]
-         (assoc a :defense (calc-defense a)))
-       axies))
+  [axie]
+  (assoc axie :defense (calc-defense axie)))
+
+(defn adjust-axie
+  [axie]
+  (-> axie
+      attach-attack
+      attach-defense
+      attach-price
+      attach-purity))
 
 (defn adjust-axies
   [axies]
-  (->> axies
-       attach-attack
-       attach-defense
-       attach-prices
-       attach-purity))
+  (map adjust-axie axies))
 
 (defn atk+def
   [{:keys [attack defense]}]
@@ -334,7 +330,8 @@
   [id]
   (md/chain
     (http/get (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
-    body->json))
+    body->json
+    adjust-axie))
 
 (defn cmd-teams
   [_]
