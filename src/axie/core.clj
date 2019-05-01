@@ -44,6 +44,14 @@
     "Beech" "Yorishiro" "Rose Bud" "Strawberry Shortcake" "Leaf Bug" "Bamboo Shoot" "Golden Bamboo Shoot"
     "Pumpkin" "Red Ear" "Crystal Hermit" "Hermit" "Sponge" "1ND14N-5T4R" "Snail Shell" "Starry Shell"})
 
+(defn search-keys
+  [a]
+  (select-keys a [:id :class :name :stats :price :purity :attack :defense]))
+
+(defn mine-keys
+  [a]
+  (select-keys a [:id :class :name :stats :purity :attack :defense :activity-point]))
+
 (defn calc-price
   [axie]
   (some-> axie
@@ -263,6 +271,25 @@
         teams
         (map #(select-keys % [:team-id :name :ready? :ready-in]) teams)))))
 
+(defn axies-on-teams
+  []
+  (md/chain
+    (fetch-teams true)
+    (partial mapcat :team-members)
+    (partial map :axie-id)
+    (partial set)))
+
+(defn unassigned-axies
+  []
+  (md/chain
+    (md/zip
+      (fetch-my-axies)
+      (axies-on-teams))
+    (fn [[mine assigned?]]
+      (->> mine
+           (remove (comp assigned? :id))
+           (map mine-keys)))))
+
 (defn start-battle
   [team-id]
   (md/chain
@@ -309,14 +336,6 @@
     (http/get (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
     body->json))
 
-(defn search-keys
-  [a]
-  (select-keys a [:id :class :name :stats :price :purity :attack :defense]))
-
-(defn mine-keys
-  [a]
-  (select-keys a [:id :class :name :stats :purity :attack :defense :activity-point]))
-
 (defn cmd-teams
   [_]
   @(md/chain
@@ -335,6 +354,12 @@
      (start-battles)
      println))
 
+(defn cmd-unassigned
+  [_]
+  @(md/chain
+     (unassigned-axies)
+     print-table))
+
 (def cli-config
   {:app {:command "axie"
          :description "Work with your axies from Axie Infinity."
@@ -347,7 +372,10 @@
                :runs cmd-matches}
               {:command "start"
                :description "Send all the teams that are ready off to battle."
-               :runs cmd-start}]})
+               :runs cmd-start}
+              {:command "unassigned"
+               :description "Which of your axies aren't on a team?"
+               :runs cmd-unassigned}]})
 
 (defn -main
   [& args]
