@@ -2,6 +2,27 @@
   (:require [clojure.test :refer [deftest is are]]
             [axie.core :as nsut]))
 
+(deftest test-sort-axies
+  (are [in expected]
+       (= expected (apply nsut/sort-axies in))
+
+       [[:c :asc]
+        [{:a 1 :b 1 :c 1}
+         {:a 1 :b 2 :c 3}
+         {:a 2 :b 1 :c 2}]]
+       [{:a 1 :b 1 :c 1}
+        {:a 2 :b 1 :c 2}
+        {:a 1 :b 2 :c 3}]
+
+       [[:a :desc]
+        [:c :asc]
+        [{:a 1 :b 1 :c 1}
+         {:a 1 :b 2 :c 3}
+         {:a 2 :b 1 :c 2}]]
+       [{:a 2 :b 1 :c 2}
+        {:a 1 :b 1 :c 1}
+        {:a 1 :b 2 :c 3}]))
+
 (deftest test-team-can-battle?
   (are [in expected]
        (= expected (nsut/team-can-battle? {:team-members in}))

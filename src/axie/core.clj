@@ -124,10 +124,14 @@
        o))
 
 (defn sort-axies
-  [sort-fns orders coll]
-  (sort-by
-    (comp vec (partial mm (map ->order orders)) (apply juxt sort-fns))
-    coll))
+  [& args]
+  (let [coll (last args)
+        sorting (drop-last 1 args)]
+    (sort-by
+      (comp vec
+            (partial mm (->> sorting (map second) (map ->order)))
+            (->> sorting (map first) (apply juxt)))
+      coll)))
 
 (defn fuzzy-match-stats
   [s1 s2]
@@ -169,8 +173,7 @@
             (fetch-page offset)
             (fn [{:keys [axies]}]
               (md/recur (concat all (adjust-axies axies))
-                        (+ offset (count axies))))))))
-    (partial filter :stats)))
+                        (+ offset (count axies))))))))))
 
 (defn fetch-addr-page
   [address offset]
