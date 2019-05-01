@@ -282,13 +282,8 @@
     (fetch-teams)
     (partial filter :ready?)
     (fn [teams]
-      (md/loop [teams teams]
-        (let [[team & more] teams]
-          (when team
-            (md/chain
-              (start-battle (:team-id team))
-              (fn [& _]
-                (md/recur more)))))))))
+      (->> teams (map (comp start-battle :team-id)) (apply md/zip)))
+    count))
 
 (defn fetch-matches
   []
@@ -336,7 +331,9 @@
 
 (defn cmd-start
   [_]
-  @(start-battles))
+  @(md/chain
+     (start-battles)
+     println))
 
 (def cli-config
   {:app {:command "axie"
