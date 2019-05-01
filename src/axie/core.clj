@@ -4,8 +4,9 @@
     [byte-streams :as bs]
     [camel-snake-kebab.core :refer [->kebab-case-keyword ->camelCaseString]]
     [cheshire.core :as json]
-    [clojure.pprint :refer [pprint]]
+    [cli-matic.core :as cli]
     [clojure.string :as string]
+    [clojure.pprint :refer [pprint print-table]]
     [manifold.deferred :as md]
     [omniconf.core :as cfg])
   (:gen-class))
@@ -279,11 +280,12 @@
     (partial filter :ready?)
     (fn [teams]
       (md/loop [teams teams]
-        (when-let [[team & more] teams]
-          (md/chain
-            (start-battle (:team-id team))
-            (fn [& _]
-              (md/recur more))))))))
+        (let [[team & more] teams]
+          (when team
+            (md/chain
+              (start-battle (:team-id team))
+              (fn [& _]
+                (md/recur more)))))))))
 
 (defn fetch-matches
   []
@@ -317,7 +319,36 @@
   [a]
   (select-keys a [:id :class :name :stats :purity :attack :defense :activity-point]))
 
+(defn cmd-teams
+  [_]
+  @(md/chain
+     (fetch-teams)
+     print-table))
+
+(defn cmd-matches
+  [_]
+  @(md/chain
+     (fetch-matches)
+     print-table))
+
+(defn cmd-start
+  [_]
+  @(start-battles))
+
+(def cli-config
+  {:app {:command "axie"
+         :description "Work with your axies from Axie Infinity."
+         :version "0.1.0"}
+   :commands [{:command "teams"
+               :description "Show all your teams and whether they're ready to battle."
+               :runs cmd-teams}
+              {:command "matches"
+               :description "Show your recent match history."
+               :runs cmd-matches}
+              {:command "start"
+               :description "Send all the teams that are ready off to battle."
+               :runs cmd-start}]})
+
 (defn -main
-  "I don't do a whole lot ... yet."
   [& args]
-  (println "Hello, World!"))
+  (cli/run-cmd args cli-config))
