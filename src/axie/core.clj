@@ -8,7 +8,6 @@
     [omniconf.core :as cfg])
   (:gen-class))
 
-
 (cfg/populate-from-file ".axie.conf")
 
 ;; TODO
