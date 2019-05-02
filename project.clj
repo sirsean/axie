@@ -10,6 +10,7 @@
                  [cheshire "5.8.1"]
                  [cli-matic "0.3.6"]
                  [manifold "0.1.8"]
+                 [com.amazonaws/aws-lambda-java-core "1.0.0"]
                  [com.grammarly/omniconf "0.3.2"]]
   :main ^:skip-aot axie.core
   :target-path "target/%s"

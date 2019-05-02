@@ -1,6 +1,6 @@
-(ns axie.core-test
+(ns axie.api-test
   (:require [clojure.test :refer [deftest is are]]
-            [axie.core :as nsut]))
+            [axie.api :as nsut]))
 
 (deftest test-sort-axies
   (are [in expected]
