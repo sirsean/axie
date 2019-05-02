@@ -46,23 +46,28 @@
 
 (defn search-keys
   [a]
-  (select-keys a [:id :class :name :stats :price :purity :attack :defense :atk+def :total-exp]))
+  (select-keys a [:id :class :name :stats :price :purity :attack :defense :atk+def :total-exp :breed-count]))
 
 (defn mine-keys
   [a]
-  (select-keys a [:id :class :name :stats :purity :attack :defense :atk+def :activity-point :total-exp]))
+  (select-keys a [:id :class :name :stats :purity :attack :defense :atk+def :activity-point :total-exp :breed-count]))
 
 (defn calc-price
-  [axie]
+  [axie auction-key]
   (some-> axie
           :auction
-          :buy-now-price
+          auction-key
           bigdec
           (* 1e-18M)))
 
 (defn attach-price
   [axie]
-  (assoc axie :price (calc-price axie)))
+  (let [buy-now (calc-price axie :buy-now-price)
+        suggested (calc-price axie :suggested-price)]
+    (assoc axie
+           :price buy-now
+           :suggested-price suggested
+           :price-diff (- (or suggested 0) (or buy-now 0)))))
 
 (defn calc-purity
   [{:keys [class] :as axie}]
