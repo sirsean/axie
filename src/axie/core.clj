@@ -106,7 +106,7 @@
 
 (defn attach-total-exp
   [{:keys [exp pending-exp] :as axie}]
-  (assoc axie :total-exp (+ exp pending-exp)))
+  (assoc axie :total-exp (+ (or exp 0) (or pending-exp 0))))
 
 (defn adjust-axie
   [axie]
