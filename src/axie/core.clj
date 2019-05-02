@@ -46,11 +46,11 @@
 
 (defn search-keys
   [a]
-  (select-keys a [:id :class :name :stats :price :purity :attack :defense]))
+  (select-keys a [:id :class :name :stats :price :purity :attack :defense :atk+def :total-exp]))
 
 (defn mine-keys
   [a]
-  (select-keys a [:id :class :name :stats :purity :attack :defense :activity-point]))
+  (select-keys a [:id :class :name :stats :purity :attack :defense :atk+def :activity-point :total-exp]))
 
 (defn calc-price
   [axie]
@@ -100,21 +100,27 @@
   [axie]
   (assoc axie :defense (calc-defense axie)))
 
+(defn attach-atk+def
+  [{:keys [attack defense] :as axie}]
+  (assoc axie :atk+def (+ attack defense)))
+
+(defn attach-total-exp
+  [{:keys [exp pending-exp] :as axie}]
+  (assoc axie :total-exp (+ exp pending-exp)))
+
 (defn adjust-axie
   [axie]
   (-> axie
       attach-attack
       attach-defense
+      attach-atk+def
       attach-price
-      attach-purity))
+      attach-purity
+      attach-total-exp))
 
 (defn adjust-axies
   [axies]
   (map adjust-axie axies))
-
-(defn atk+def
-  [{:keys [attack defense]}]
-  (+ attack defense))
 
 (defn mm
   [c1 c2]

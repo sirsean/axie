@@ -36,7 +36,7 @@ Find some interesting axies to buy:
 ```
 (def all @(fetch-all))
 
-(->> all (sort-axies [atk+def :desc] [:price :asc]) (map search-keys) dedupe (take 4) pprint)
+(->> all (sort-axies [:atk+def :desc] [:price :asc]) (map search-keys) dedupe (take 4) print-table)
 ```
 
 Look at some of your own axies:
@@ -44,13 +44,13 @@ Look at some of your own axies:
 ```
 (def mine @(fetch-my-axies))
 
-(->> mine (sort-axies [atk+def :desc]) (map mine-keys) (take 4) pprint)
+(->> mine (sort-axies [:atk+def :desc]) (map mine-keys) (take 4) print-table)
 ```
 
 Check out your teams:
 
 ```
-@(md/chain (fetch-teams) pprint)
+@(md/chain (fetch-teams) print-table)
 ```
 
 Start all the battles:
