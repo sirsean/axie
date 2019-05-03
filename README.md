@@ -14,7 +14,40 @@ ready off to battle at once.
 
 ## Usage
 
-For now, it can only be used in the REPL.
+It can be used either in the REPL or at the command line.
+
+Here are the CLI commands:
+
+```
+COMMANDS:
+   teams                Show all your teams and whether they're ready to battle.
+   matches              Show your recent match history.
+   start                Send all the teams that are ready off to battle.
+   unassigned           Which of your axies aren't on a team?
+   breedable            Which of your axies are currently breedable?
+   leaderboard          Who's at the top?
+   rank                 Find your rank
+```
+
+You can run them with Leiningen:
+
+```
+lein run teams
+
+lein run matches
+
+lein run start
+```
+
+You can also execute these commands from the REPL:
+
+```
+=> (cmd/teams)
+
+=> (cmd/matches)
+
+=> (cmd/start)
+```
 
 ## Options
 
