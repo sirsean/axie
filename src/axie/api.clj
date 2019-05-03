@@ -329,3 +329,26 @@
     (http/get (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
     body->json
     adjust-axie))
+
+(defn format-decimals
+  [k n coll]
+  (let [format-template (format "%%.%df" n)]
+    (map (fn [x] (update x k (partial format format-template))) coll)))
+
+(defn fetch-leaderboard
+  []
+  (md/chain
+    (http/get (format "https://api.axieinfinity.com/v1/battle/history/leaderboard?address=%s"
+                      (cfg/get :eth-addr)))
+    body->json
+    (partial map (fn [{:keys [wins losses] :as row}]
+                   (assoc row :percentage (float (/ wins (+ wins losses))))))))
+
+(defn my-rank
+  []
+  (md/chain
+    (fetch-leaderboard)
+    #(->> %
+          (filter (fn [{:keys [address]}]
+                    (= (string/lower-case address)
+                       (string/lower-case (cfg/get :eth-addr))))))))

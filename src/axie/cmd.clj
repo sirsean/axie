@@ -35,6 +35,20 @@
      (api/breedable-axies)
      print-table))
 
+(defn leaderboard
+  [& _]
+  @(md/chain
+     (api/fetch-leaderboard)
+     (partial api/format-decimals :percentage 3)
+     print-table))
+
+(defn rank
+  [& _]
+  @(md/chain
+     (api/my-rank)
+     (partial api/format-decimals :percentage 3)
+     print-table))
+
 (def config
   {:app {:command "axie"
          :description "Work with your axies from Axie Infinity."
@@ -53,4 +67,10 @@
                :runs unassigned}
               {:command "breedable"
                :description "Which of your axies are currently breedable?"
-               :runs breedable}]})
+               :runs breedable}
+              {:command "leaderboard"
+               :description "Who's at the top?"
+               :runs leaderboard}
+              {:command "rank"
+               :description "Find your rank"
+               :runs rank}]})
