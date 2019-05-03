@@ -21,6 +21,7 @@
 ;; - how can we assign a value to a part, or collection of parts?
 ;; balanced stats
 ;; - rather than just sorting by the max of a single stat, can we find a balance across multiple/all stats?
+;; my current rank
 
 (defn -main
   [& args]

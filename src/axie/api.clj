@@ -274,6 +274,15 @@
            (remove (comp assigned? :id))
            (map mine-keys)))))
 
+(defn breedable-axies
+  []
+  (md/chain
+    (md/chain
+      (fetch-my-axies)
+      #(->> %
+            (filter :breedable)
+            (map mine-keys)))))
+
 (defn start-battle
   [team-id]
   (md/chain

@@ -29,6 +29,12 @@
      (api/unassigned-axies)
      print-table))
 
+(defn breedable
+  [& _]
+  @(md/chain
+     (api/breedable-axies)
+     print-table))
+
 (def config
   {:app {:command "axie"
          :description "Work with your axies from Axie Infinity."
@@ -44,4 +50,7 @@
                :runs start}
               {:command "unassigned"
                :description "Which of your axies aren't on a team?"
-               :runs unassigned}]})
+               :runs unassigned}
+              {:command "breedable"
+               :description "Which of your axies are currently breedable?"
+               :runs breedable}]})
