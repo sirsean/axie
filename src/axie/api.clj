@@ -144,59 +144,61 @@
       bs/to-reader
       (json/parse-stream ->kebab-case-keyword)))
 
-(defn fetch-page
-  [offset]
+(defn fetch-json
+  [url & [opts]]
   (md/chain
-    (http/get (format "https://axieinfinity.com/api/v2/axies?breedable&lang=en&offset=%d&sale=1&sorting=lowest_price" offset))
+    (http/get url (or opts {}))
     body->json))
 
-(defn fetch-all
-  [& {:keys [max-price]
-      :or {max-price 0.1M}}]
+(defn fetch-page
+  [offset]
+  (fetch-json (format "https://axieinfinity.com/api/v2/axies?breedable&lang=en&offset=%d&sale=1&sorting=lowest_price" offset)))
+
+(defn total->chapters
+  [total]
+  (->> total range (partition-all 12) (map first) rest (partition-all 20)))
+
+(defn fetch-pages
+  [fetch-page-fn]
   (md/chain
-    (fetch-page 0)
+    (fetch-page-fn 0)
     (fn [{:keys [total-axies axies]}]
       (md/loop [all (adjust-axies axies)
-                offset (count axies)]
-        (if (or (<= total-axies offset)
-                (< max-price (->> all (map :price) (apply max))))
-          all
-          (md/chain
-            (fetch-page offset)
-            (fn [{:keys [axies]}]
-              (md/recur (concat all (adjust-axies axies))
-                        (+ offset (count axies))))))))))
+                chapters (total->chapters total-axies)]
+        (let [[page & chapters] chapters]
+          (if-not page
+            all
+            (md/chain
+              (apply md/zip (map fetch-page-fn page))
+              (fn [results]
+                (md/recur
+                  (->> results
+                       (mapcat :axies)
+                       adjust-axies
+                       (concat all))
+                  chapters)))))))))
+
+(defn fetch-all
+  []
+  (fetch-pages fetch-page))
 
 (defn fetch-addr-page
   [address offset]
-  (md/chain
-    (http/get (format "https://axieinfinity.com/api/v2/addresses/%s/axies?a=1&offset=%d"
-                      address offset))
-    body->json))
+  (fetch-json (format "https://axieinfinity.com/api/v2/addresses/%s/axies?a=1&offset=%d"
+                      address offset)))
 
 (defn fetch-addr
   [address]
-  (md/chain
-    (fetch-addr-page address 0)
-    (fn [{:keys [total-axies axies]}]
-      (md/loop [all (adjust-axies axies)
-                offset (count axies)]
-        (if (<= total-axies offset)
-          all
-          (md/chain
-            (fetch-addr-page address offset)
-            (fn [{:keys [axies]}]
-              (md/recur (concat all (adjust-axies axies))
-                        (+ offset (count axies))))))))))
+  (fetch-pages (partial fetch-addr-page address)))
 
 (defn fetch-activity-points
   [ids]
   (md/chain
-    (http/get (format "https://api.axieinfinity.com/v1/battle/battle/activity-point?%s"
-                      (->> ids
-                           (map (partial format "axieId=%s"))
-                           (string/join "&"))))
-    body->json
+    (fetch-json (format "https://api.axieinfinity.com/v1/battle/battle/activity-point?%s"
+                        (->> ids
+                             (filter some?)
+                             (map (partial format "axieId=%s"))
+                             (string/join "&"))))
     (partial reduce
              (fn [m {:keys [axie-id activity-point]}]
                (assoc m axie-id activity-point))
@@ -232,9 +234,8 @@
 (defn fetch-teams
   [& [show-all-fields]]
   (md/chain
-    (http/get (format "https://api.axieinfinity.com/v1/battle/teams/?address=%s&offset=0&count=47&no_limit=1"
-                      (cfg/get :eth-addr)))
-    body->json
+    (fetch-json (format "https://api.axieinfinity.com/v1/battle/teams/?address=%s&offset=0&count=47&no_limit=1"
+                        (cfg/get :eth-addr)))
     :teams
     (fn [teams]
       (md/chain
@@ -308,9 +309,8 @@
 (defn fetch-matches
   []
   (md/chain
-    (http/get "https://api.axieinfinity.com/v1/battle/history/matches"
-              {:headers {"Authorization" (format "Bearer %s" (cfg/get :token))}})
-    body->json
+    (fetch-json "https://api.axieinfinity.com/v1/battle/history/matches"
+                {:headers {"Authorization" (format "Bearer %s" (cfg/get :token))}})
     :matches
     (partial map (fn [{:keys [id winner loser]}]
                    {:id id
@@ -326,8 +326,7 @@
 (defn fetch-axie
   [id]
   (md/chain
-    (http/get (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
-    body->json
+    (fetch-json (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
     adjust-axie))
 
 (defn format-decimals
@@ -338,9 +337,8 @@
 (defn fetch-leaderboard
   []
   (md/chain
-    (http/get (format "https://api.axieinfinity.com/v1/battle/history/leaderboard?address=%s"
-                      (cfg/get :eth-addr)))
-    body->json
+    (fetch-json (format "https://api.axieinfinity.com/v1/battle/history/leaderboard?address=%s"
+                        (cfg/get :eth-addr)))
     (partial map (fn [{:keys [wins losses] :as row}]
                    (assoc row :percentage (float (/ wins (+ wins losses))))))))
 
