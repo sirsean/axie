@@ -29,6 +29,10 @@
   [a]
   (select-keys a [:id :class :name :stats :purity :attack :defense :atk+def :activity-point :total-exp :breed-count]))
 
+(defn adult?
+  [{:keys [stage]}]
+  (= stage 4))
+
 (defn calc-price
   [axie auction-key]
   (some-> axie
@@ -273,6 +277,7 @@
     (fn [[mine assigned?]]
       (->> mine
            (remove (comp assigned? :id))
+           (filter adult?)
            (map mine-keys)))))
 
 (defn breedable-axies
