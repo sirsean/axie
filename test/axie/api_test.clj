@@ -1,6 +1,17 @@
 (ns axie.api-test
   (:require [clojure.test :refer [deftest is are]]
+            [vcr-clj.core :refer [with-cassette]]
             [axie.api :as nsut]))
+
+(def aleph-specs
+  [{:var #'aleph.http/get
+    :return-transformer (fn [r] (-> r
+                                    deref
+                                    (update-in [:body]
+                                               (fn [b]
+                                                 (cond-> b
+                                                   (instance? java.io.InputStream b)
+                                                   vcr-clj.cassettes.serialization/serializablize-input-stream)))))}])
 
 (deftest test-adult?
   (are [in expected]
@@ -201,3 +212,31 @@
         {:activity-point 720}
         {:activity-point 720}]
        true))
+
+(deftest test-total->chapters
+  (are [in expected]
+       (= expected (nsut/total->chapters in))
+
+       5
+       []
+
+       12
+       []
+
+       20
+       [[12]]
+
+       500
+       [[12 24 36 48 60 72 84 96 108 120 132 144 156 168 180 192 204 216 228 240]
+        [252 264 276 288 300 312 324 336 348 360 372 384 396 408 420 432 444 456 468 480]
+        [492]]))
+
+(deftest test-fetch-all
+  (with-cassette :fetch-all aleph-specs
+    (let [axies @(nsut/fetch-all)]
+      (is (= 3459 (count axies)))
+      (is (= "Axie #48093"
+             (->> axies
+                  (nsut/sort-axies [:atk+def :desc] [:price :asc])
+                  first
+                  :name))))))
