@@ -88,7 +88,7 @@
 
 (defn attach-atk+def
   [{:keys [attack defense] :as axie}]
-  (assoc axie :atk+def (+ attack defense)))
+  (assoc axie :atk+def (+ (or attack 0) (or defense 0))))
 
 (defn attach-total-exp
   [{:keys [exp pending-exp] :as axie}]
