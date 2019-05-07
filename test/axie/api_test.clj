@@ -204,6 +204,10 @@
        false
 
        [{:activity-point 240}
+        {:activity-point 240}]
+       false
+
+       [{:activity-point 240}
         {:activity-point 240}
         {:activity-point 240}]
        true

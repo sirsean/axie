@@ -240,7 +240,8 @@
 
 (defn team-can-battle?
   [{:keys [team-members]}]
-  (every? (comp (partial <= 240) :activity-point) team-members))
+  (and (= 3 (count team-members))
+       (every? (comp (partial <= 240) :activity-point) team-members)))
 
 (defn team-ready-in
   [{:keys [team-members]}]
