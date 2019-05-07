@@ -93,6 +93,16 @@ Start all the battles:
 @(start-battles)
 ```
 
+## Do you like it?
+
+If you like this thing and it saves you some time, feel free to send some ETH to:
+
+```
+0x560EBafD8dB62cbdB44B50539d65b48072b98277
+```
+
+Whatever you think is reasonable, if you've got it.
+
 ## License
 
 Copyright © 2019 Sean Schulte
