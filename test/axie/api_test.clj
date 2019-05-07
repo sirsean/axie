@@ -162,6 +162,8 @@
          :attack 1
          :defense 2
          :atk+def 3
+         :dps 0
+         :tank 0
          :price 1M
          :suggested-price 1.5M
          :price-diff 0.5M
