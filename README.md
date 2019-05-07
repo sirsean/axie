@@ -21,6 +21,7 @@ Here are the CLI commands:
 ```
 COMMANDS:
    teams                Show all your teams and whether they're ready to battle.
+   team                 Get some info on the axies on a team.
    matches              Show your recent match history.
    start                Send all the teams that are ready off to battle.
    unassigned           Which of your axies aren't on a team?
