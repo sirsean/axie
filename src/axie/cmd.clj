@@ -11,6 +11,12 @@
      (api/fetch-teams)
      print-table))
 
+(defn team
+  [{:keys [team-id]}]
+  @(md/chain
+     (api/fetch-team team-id)
+     print-table))
+
 (defn matches
   [& _]
   @(md/chain
@@ -56,6 +62,10 @@
    :commands [{:command "teams"
                :description "Show all your teams and whether they're ready to battle."
                :runs teams}
+              {:command "team"
+               :description "Get some info on the axies on a team."
+               :opts [{:option "team-id" :as "Team ID" :type :string :short 0}]
+               :runs team}
               {:command "matches"
                :description "Show your recent match history."
                :runs matches}

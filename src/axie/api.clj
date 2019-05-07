@@ -224,6 +224,20 @@
     (fetch-addr (cfg/get :eth-addr))
     attach-activity-points))
 
+(defn fetch-axie
+  [id]
+  (md/chain
+    (fetch-json (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
+    adjust-axie))
+
+(defn fetch-team
+  [team-id]
+  (md/chain
+    (fetch-json (format "https://api.axieinfinity.com/v1/battle/teams/%s" team-id))
+    (fn [team]
+      (apply md/zip (->> team :team-members (map :axie-id) (map fetch-axie))))
+    (partial map mine-keys)))
+
 (defn team-can-battle?
   [{:keys [team-members]}]
   (every? (comp (partial <= 240) :activity-point) team-members))
@@ -327,12 +341,6 @@
                     :loser-rating (:delta-rating loser)
                     :you-win? (= (string/lower-case (cfg/get :eth-addr))
                                  (string/lower-case (:address winner)))}))))
-
-(defn fetch-axie
-  [id]
-  (md/chain
-    (fetch-json (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
-    adjust-axie))
 
 (defn format-decimals
   [k n coll]
