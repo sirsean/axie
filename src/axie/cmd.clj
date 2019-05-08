@@ -35,6 +35,12 @@
      (api/unassigned-axies)
      print-table))
 
+(defn multi-assigned
+  [& _]
+  @(md/chain
+     (api/multi-assigned-axies)
+     pprint))
+
 (defn breedable
   [& _]
   @(md/chain
@@ -75,6 +81,9 @@
               {:command "unassigned"
                :description "Which of your axies aren't on a team?"
                :runs unassigned}
+              {:command "multi-assigned"
+               :description "Which axies are assigned to multiple teams?"
+               :runs multi-assigned}
               {:command "breedable"
                :description "Which of your axies are currently breedable?"
                :runs breedable}

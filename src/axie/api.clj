@@ -462,6 +462,21 @@
            (filter adult?)
            (map mine-keys)))))
 
+(defn multi-assigned-axies
+  []
+  (md/chain
+    (fetch-teams true)
+    (fn [teams]
+      (->> teams
+           (mapcat (fn [{:keys [team-id name team-members]}]
+                     (map (fn [{:keys [axie-id]}]
+                            [axie-id {:team-id team-id
+                                      :team-name name}])
+                          team-members)))
+           (reduce (fn [a->ts [axie-id t]]
+                     (update a->ts axie-id conj t)) {})
+           (filter (fn [[_ ts]] (< 1 (count ts))))))))
+
 (defn breedable-axies
   []
   (md/chain
