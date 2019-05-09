@@ -61,6 +61,12 @@
      (partial api/format-decimals :percentage 3)
      print-table))
 
+(defn simulate
+  [{:keys [attacker defender]}]
+  @(md/chain
+     (api/simulate-battle attacker defender)
+     print-table))
+
 (def config
   {:app {:command "axie"
          :description "Work with your axies from Axie Infinity."
@@ -91,5 +97,10 @@
                :description "Who's at the top?"
                :runs leaderboard}
               {:command "rank"
-               :description "Find your rank"
-               :runs rank}]})
+               :description "Find your rank."
+               :runs rank}
+              {:command "simulate"
+               :description "Calculate the damage done by each of an attacker's moves against a defender's."
+               :opts [{:option "attacker" :as "Attacker Axie ID" :type :int :short 0}
+                      {:option "defender" :as "Defender Axie ID" :type :int :short 1}]
+               :runs simulate}]})
