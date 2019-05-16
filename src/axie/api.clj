@@ -326,8 +326,8 @@
   (fetch-json (format "https://axieinfinity.com/api/v2/axies?breedable&lang=en&offset=%d&sale=1&sorting=lowest_price" offset)))
 
 (defn total->chapters
-  [total]
-  (->> total range (partition-all 12) (map first) rest (partition-all 20)))
+  [page-size total]
+  (->> total range (partition-all page-size) (map first) rest (partition-all 20)))
 
 (defn fetch-pages
   [fetch-page-fn]
@@ -335,7 +335,7 @@
     (fetch-page-fn 0)
     (fn [{:keys [total-axies axies]}]
       (md/loop [all (adjust-axies axies)
-                chapters (total->chapters total-axies)]
+                chapters (total->chapters 12 total-axies)]
         (let [[page & chapters] chapters]
           (if-not page
             all
@@ -417,12 +417,29 @@
        (apply min)
        (- 240)))
 
-(defn fetch-teams
-  [& [show-all-fields]]
+(defn fetch-teams-page
+  [eth-addr offset]
+  (fetch-json (format "https://api.axieinfinity.com/v1/battle/teams/?address=%s&offset=%d&count=47&no_limit=1"
+                      eth-addr offset)))
+
+(defn fetch-teams-for
+  [eth-addr & [show-all-fields]]
   (md/chain
-    (fetch-json (format "https://api.axieinfinity.com/v1/battle/teams/?address=%s&offset=0&count=47&no_limit=1"
-                        (cfg/get :eth-addr)))
-    :teams
+    (fetch-teams-page eth-addr 0)
+    (fn [{:keys [total teams]}]
+      (md/loop [all teams
+                chapters (total->chapters 47 total)]
+        (let [[page & chapters] chapters]
+          (if-not page
+            all
+            (md/chain
+              (apply md/zip (map (partial fetch-teams-page eth-addr) page))
+              (fn [results]
+                (md/recur
+                  (->> results
+                       (mapcat :teams)
+                       (concat all))
+                  chapters)))))))
     (fn [teams]
       (md/chain
         (fetch-activity-points (->> teams (mapcat :team-members) (map :axie-id)))
@@ -441,6 +458,10 @@
       (if show-all-fields
         teams
         (map #(select-keys % [:team-id :name :ready? :ready-in]) teams)))))
+
+(defn fetch-teams
+  [& [show-all-fields]]
+  (fetch-teams-for (cfg/get :eth-addr) show-all-fields))
 
 (defn axies-on-teams
   []
@@ -486,27 +507,35 @@
             (filter :breedable)
             (map mine-keys)))))
 
-(defn start-battle
-  [team-id]
+(defn start-battle-for
+  [token team-id]
   (md/chain
     (http/post "https://api.axieinfinity.com/v1/battle/battle/queue"
                {:body (json/generate-string
                         {:team-id team-id}
                         {:key-fn ->camelCaseString})
-                :headers {"Authorization" (format "Bearer %s" (cfg/get :token))
+                :headers {"Authorization" (format "Bearer %s" token)
                           "Content-Type" "application/json"}})
     :body
     bs/to-string
     (partial = "success")))
 
-(defn start-battles
-  []
+(defn start-battle
+  [team-id]
+  (start-battle-for (cfg/get :token) team-id))
+
+(defn start-battles-for
+  [eth-addr token]
   (md/chain
-    (fetch-teams)
+    (fetch-teams-for eth-addr)
     (partial filter :ready?)
     (fn [teams]
-      (->> teams (map (comp start-battle :team-id)) (apply md/zip)))
+      (->> teams (map (comp (partial start-battle-for token) :team-id)) (apply md/zip)))
     count))
+
+(defn start-battles
+  []
+  (start-battles-for (cfg/get :eth-addr) (cfg/get :token)))
 
 (defn fetch-matches
   []
