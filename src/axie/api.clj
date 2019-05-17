@@ -530,8 +530,21 @@
     (fetch-teams-for eth-addr)
     (partial filter :ready?)
     (fn [teams]
-      (->> teams (map (comp (partial start-battle-for token) :team-id)) (apply md/zip)))
-    count))
+      (md/loop [success 0
+                failure 0
+                teams teams]
+        (let [[team & more] teams]
+          (if-not team
+            {:success success
+             :failure failure}
+            (->
+              (md/chain (start-battle-for token (:team-id team))
+                        (fn [_]
+                          (Thread/sleep 100)
+                          (md/recur (inc success) failure more)))
+              (md/catch Exception (fn [e]
+                                    (println "fail" (:team-id team) (-> e ex-data :body bs/to-string))
+                                    (md/recur success (inc failure) more))))))))))
 
 (defn start-battles
   []

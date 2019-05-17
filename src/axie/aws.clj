@@ -23,8 +23,13 @@
       (when (some? customer)
         (if (or (nil? until)
                 (not (tc/before? (tf/parse-local-date until) (tc/today))))
-          (let [num-started @(axie/start-battles-for eth-addr token)]
-            (println "started" eth-addr name num-started))
+          (try
+            (println "starting" name eth-addr token)
+            (let [num-started @(axie/start-battles-for eth-addr token)]
+              (println "started" eth-addr name num-started))
+            (catch Exception e
+              (println "failed" name eth-addr)
+              (println e)))
           (println "skipping" eth-addr name))
         (recur more)))
     (println "all done!")))
