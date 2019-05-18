@@ -221,18 +221,18 @@
 
 (deftest test-total->chapters
   (are [in expected]
-       (= expected (nsut/total->chapters in))
+       (= expected (apply nsut/total->chapters in))
 
-       5
+       [12 5]
        []
 
-       12
+       [12 12]
        []
 
-       20
+       [12 20]
        [[12]]
 
-       500
+       [12 500]
        [[12 24 36 48 60 72 84 96 108 120 132 144 156 168 180 192 204 216 228 240]
         [252 264 276 288 300 312 324 336 348 360 372 384 396 408 420 432 444 456 468 480]
         [492]]))
