@@ -525,10 +525,13 @@
   (start-battle-for (cfg/get :token) team-id))
 
 (defn start-battles-for
-  [eth-addr token]
+  [{:keys [eth-addr token max-teams]}]
   (md/chain
     (fetch-teams-for eth-addr)
-    (partial filter :ready?)
+    #(->> %
+          (sort-by :name)
+          ((if (some? max-teams) (partial take max-teams) identity))
+          (filter :ready?))
     (fn [teams]
       (md/loop [success 0
                 failure 0
@@ -548,7 +551,8 @@
 
 (defn start-battles
   []
-  (start-battles-for (cfg/get :eth-addr) (cfg/get :token)))
+  (start-battles-for {:eth-addr (cfg/get :eth-addr)
+                      :token (cfg/get :token)}))
 
 (defn fetch-matches
   []

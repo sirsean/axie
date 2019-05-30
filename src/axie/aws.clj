@@ -11,6 +11,10 @@
   (:gen-class
     :methods [^:static [start [] String]]))
 
+(defn expired?
+  [until]
+  (tc/before? (tf/parse-local-date until) (tc/today)))
+
 (defn -start
   []
   (println "starting battles")
@@ -19,13 +23,17 @@
                       slurp
                       (json/parse-string ->kebab-case-keyword))]
     (println "customers:" (count customers))
-    (loop [[{:keys [name eth-addr token until] :as customer} & more] customers]
+    (loop [[{:keys [name eth-addr token until max-teams] :as customer} & more] customers]
       (when (some? customer)
-        (if (or (nil? until)
-                (not (tc/before? (tf/parse-local-date until) (tc/today))))
+        (let [max-teams (cond
+                          (nil? until) max-teams
+                          (expired? until) 3
+                          :else max-teams)]
           (try
-            (println "starting" name eth-addr token)
-            (let [num-started @(axie/start-battles-for eth-addr token)]
+            (println "starting" name max-teams eth-addr token)
+            (let [num-started @(axie/start-battles-for {:eth-addr eth-addr
+                                                        :token token
+                                                        :max-teams max-teams})]
               (println "started" eth-addr name num-started))
             (catch Exception e
               (println "failed" name eth-addr)
