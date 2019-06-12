@@ -394,7 +394,7 @@
 (defn fetch-axie
   [id]
   (md/chain
-    (fetch-json (format "https://axieinfinity.com/api/v2/axies/%d?lang=en" id))
+    (fetch-json (format "https://axieinfinity.com/api/v2/axies/%s?lang=en" id))
     adjust-axie))
 
 (defn fetch-team

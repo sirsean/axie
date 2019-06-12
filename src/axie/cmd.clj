@@ -1,9 +1,17 @@
 (ns axie.cmd
   (:require
     [axie.api :as api]
+    [axie.sdb :as sdb]
+    [amazonica.aws.simpledb :as simpledb]
     [cli-matic.core :as cli]
     [clojure.pprint :refer [pprint print-table]]
     [manifold.deferred :as md]))
+
+(defn create-domains
+  [& _]
+  (doseq [domain sdb/all-domains]
+    (println "creating" domain)
+    (simpledb/create-domain :domain-name domain)))
 
 (defn teams
   [& _]
@@ -71,7 +79,10 @@
   {:app {:command "axie"
          :description "Work with your axies from Axie Infinity."
          :version "0.1.0"}
-   :commands [{:command "teams"
+   :commands [{:command "create-domains"
+               :description "Create the necessary SimpleDB domains."
+               :runs create-domains}
+              {:command "teams"
                :description "Show all your teams and whether they're ready to battle."
                :runs teams}
               {:command "team"

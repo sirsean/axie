@@ -11,3 +11,4 @@ pom.xml.asc
 .hg/
 .axie.conf
 customers.json
+log

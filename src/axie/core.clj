@@ -1,8 +1,14 @@
 (ns axie.core
   (:require
+    [mount.core :as mount]
+    [mount-up.core :as mu]
     [axie.api :refer :all]
     [axie.cmd :as cmd]
     [axie.config]
+    [axie.components.axie-db]
+    [axie.components.cryptonator]
+    [axie.components.server]
+    [axie.components.payment-processor]
     [cli-matic.core :as cli]
     [clojure.pprint :refer [pprint print-table]]
     [manifold.deferred :as md]
@@ -10,6 +16,8 @@
   (:gen-class))
 
 (cfg/populate-from-file ".axie.conf")
+
+(mu/on-upndown :info mu/log :before)
 
 ;; TODO
 ;; determine market price for an axie:
