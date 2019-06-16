@@ -1,11 +1,12 @@
 (ns user
   (:require
     [clojure.tools.namespace.repl :as repl]
-    [clojure.java.io :as io]
     [mount.core :as mount]
     [mount-up.core :as mu]
+    [amazonica.aws.simpledb :as simpledb]
     [axie.cmd :as cmd]
-    [axie.components.axie-db]
+    [axie.components.config :as config]
+    [axie.components.axie-db :as axie-db]
     [axie.components.cryptonator]
     [axie.components.server]
     [axie.components.payment-processor]

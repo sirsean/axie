@@ -3,8 +3,13 @@
     [amazonica.aws.simpledb :as simpledb]
     [axie.sdb :as sdb]
     [clj-uuid :as uuid]
+    [omniconf.core :as cfg]
     [vvvvalvalval.supdate.api :refer [supdate]]
     ))
+
+(defn domain-name
+  []
+  (format "axie.%s.payments" (name (cfg/get :env))))
 
 (defn item->record
   [item]
@@ -16,7 +21,7 @@
   [{:keys [product status txid addr]}]
   (let [id (uuid/v4)]
     (simpledb/put-attributes
-      :domain-name "payments"
+      :domain-name (domain-name)
       :item-name id
       :attributes (sdb/map->attrs {:product product
                                    :status status
@@ -27,7 +32,7 @@
 (defn set-attrs
   [id record]
   (simpledb/put-attributes
-    :domain-name "payments"
+    :domain-name (domain-name)
     :item-name id
     :attributes (sdb/map->attrs record)))
 
@@ -43,7 +48,14 @@
   []
   (->> (simpledb/select
          :select-expression
-         "select * from `payments` where `status`='pending'"
+         (format "select * from `%s` where `status`='pending'"
+                 (domain-name))
          :consistent-read true)
        :items
        (map item->record)))
+
+(defn tx-success?
+  [txid]
+  (-> (format "select count(*) from `%s` where `txid`='%s' and `status`='success'" (domain-name) txid)
+      (sdb/select-count true)
+      pos?))

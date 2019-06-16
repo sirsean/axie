@@ -4,11 +4,6 @@
     [plumbing.core :as p]
     ))
 
-(def all-domains
-  ["accounts"
-   "family-tree-views"
-   "payments"])
-
 (defn attrs->map
   [attrs]
   (p/for-map [{:keys [name value]} attrs]

@@ -58,6 +58,9 @@
       (not (known-product? (:product p)))
       (payment/set-status (:id p) :invalid-product)
 
+      (payment/tx-success? (:txid p))
+      (payment/set-status (:id p) :invalid-doublepay)
+
       (valid? tx)
       (do
         (process-payment p tx)

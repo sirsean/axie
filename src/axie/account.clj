@@ -2,11 +2,16 @@
   (:require
     [amazonica.aws.simpledb :as simpledb]
     [axie.sdb :as sdb]
+    [omniconf.core :as cfg]
     [vvvvalvalval.supdate.api :refer [supdate]]
     ))
 
+(defn domain-name
+  []
+  (format "axie.%s.accounts" (name (cfg/get :env))))
+
 (def defaults
-  {:family-tree-paid 0})
+  {:family-tree-paid 3})
 
 (defn item->record
   [item]
@@ -18,7 +23,7 @@
 (defn fetch
   [addr]
   (let [attrs (simpledb/get-attributes
-                :domain-name "accounts"
+                :domain-name (domain-name)
                 :item-name addr)]
     (when (seq (:attributes attrs))
       (-> attrs
@@ -28,6 +33,6 @@
 (defn set-attrs
   [addr record]
   (simpledb/put-attributes
-    :domain-name "accounts"
+    :domain-name (domain-name)
     :item-name addr
     :attributes (sdb/map->attrs record)))

@@ -3,9 +3,14 @@
     [axie.components.axie-db :as axie-db]
     [manifold.deferred :as md]
     [amazonica.aws.simpledb :as simpledb]
+    [omniconf.core :as cfg]
     [axie.sdb :as sdb]
     [axie.price :as price]
     ))
+
+(defn views-domain-name
+  []
+  (format "axie.%s.family-tree-views" (name (cfg/get :env))))
 
 (def base-prices
   [{:views 10  :usd 1}
@@ -43,15 +48,15 @@
 
 (defn viewed?
   [addr axie-id]
-  (-> (format "select count(*) from `family-tree-views` where `addr`='%s' and `axie-id`='%s'"
-              addr axie-id)
+  (-> (format "select count(*) from `%s` where `addr`='%s' and `axie-id`='%s'"
+              (views-domain-name) addr axie-id)
       (sdb/select-count true)
       pos?))
 
 (defn view!
   [addr axie-id]
   (simpledb/put-attributes
-    :domain-name "family-tree-views"
+    :domain-name (views-domain-name)
     :item-name (format "%s:%s" addr axie-id)
     :attributes [{:name "addr"
                   :value addr}
@@ -61,15 +66,15 @@
 (defn fetch-num-views
   [addr]
   (sdb/select-count
-        (format "select count(*) from `family-tree-views` where `addr`='%s'"
-                addr)
+        (format "select count(*) from `%s` where `addr`='%s'"
+                (views-domain-name) addr)
         true))
 
 (defn fetch-views
   [addr]
   (->> (simpledb/select
          :select-expression
-         (format "select * from `family-tree-views` where `addr`='%s'"
-                 addr))
+         (format "select * from `%s` where `addr`='%s'"
+                 (views-domain-name) addr))
        :items
        (map sdb/item->record)))
