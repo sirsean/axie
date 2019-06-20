@@ -3,6 +3,7 @@
     [axie.api :as api]
     [axie.sdb :as sdb]
     [axie.account :as account]
+    [axie.auto-battle :as auto-battle]
     [axie.family-tree :as family-tree]
     [axie.payment :as payment]
     [amazonica.aws.simpledb :as simpledb]
@@ -13,6 +14,7 @@
 (defn create-domains
   [& _]
   (doseq [domain [(account/domain-name)
+                  (auto-battle/domain-name)
                   (family-tree/views-domain-name)
                   (payment/domain-name)]]
     (println "creating" domain)

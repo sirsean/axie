@@ -2,10 +2,12 @@
   (:require
     [clojure.tools.logging :as log]
     [clojure.string :as string]
+    [clj-time.core :as tc]
     [mount.core :refer [defstate]]
     [tea-time.core :as tt]
     [axie.components.timer :refer [timer]]
     [axie.account :as account]
+    [axie.auto-battle :as auto-battle]
     [axie.payment :as payment]
     [axie.family-tree :as family-tree]
     [axie.ethplorer :as ethplorer]
@@ -21,7 +23,7 @@
 (defn known-product?
   [product]
   (contains?
-    #{"family-tree"}
+    #{"family-tree" "auto-battle"}
     product))
 
 (defn valid?
@@ -42,31 +44,47 @@
                        {:family-tree-paid (+ family-tree-paid
                                              (:views tier))})))
 
+(defmethod process-payment "auto-battle"
+  [p tx]
+  (let [amount (bigdec (:value tx))
+        max-teams (some-> p :max-teams auto-battle/blank->nil bigint)
+        days (-> max-teams
+                 auto-battle/tier-by-max-teams
+                 (auto-battle/calc-days amount))
+        until (tc/plus (tc/today) (tc/days days))]
+    (log/infof "auto-battle (max-teams %s) (days %s) (until %s)" max-teams days until)
+    (auto-battle/upgrade (:addr p)
+                         {:max-teams max-teams
+                          :until until})))
+
 (defn process-pending
   []
-  (log/info "process-pending")
-  (doseq [p (payment/fetch-pending)
-          :let [tx @(ethplorer/get-tx-info (:txid p))]]
-    (log/infof "payment (%s) tx (%s)" p tx)
-    (cond
-      (not (addr= pay-addr (:to tx)))
-      (payment/set-status (:id p) :invalid-to)
+  #_(log/info "process-pending")
+  (doseq [p (payment/fetch-pending)]
+    (log/infof "payment (%s)" p)
+    (let [tx @(ethplorer/get-tx-info (:txid p))]
+      (log/infof "tx (%s)" tx)
+      (cond
+        (not (addr= pay-addr (:to tx)))
+        (payment/set-status (:id p) :invalid-to)
 
-      (not (addr= (:addr p) (:from tx)))
-      (payment/set-status (:id p) :invalid-from)
+        (not (addr= (:addr p) (:from tx)))
+        (payment/set-status (:id p) :invalid-from)
 
-      (not (known-product? (:product p)))
-      (payment/set-status (:id p) :invalid-product)
+        (not (known-product? (:product p)))
+        (payment/set-status (:id p) :invalid-product)
 
-      (payment/tx-success? (:txid p))
-      (payment/set-status (:id p) :invalid-doublepay)
+        (payment/tx-success? (:txid p))
+        (payment/set-status (:id p) :invalid-doublepay)
 
-      (valid? tx)
-      (do
-        (process-payment p tx)
-        (payment/set-attrs (:id p)
-                           {:status :success
-                            :amount (:value tx)})))))
+        (valid? tx)
+        (try
+          (process-payment p tx)
+          (payment/set-attrs (:id p)
+                             {:status :success
+                              :amount (:value tx)})
+          (catch Exception e
+            (log/errorf e "failed to process payment %s" (:id p))))))))
 
 (defstate payment-processor
   :start (tt/every! 10 process-pending)

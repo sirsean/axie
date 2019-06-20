@@ -23,6 +23,13 @@
     (attrs->map attributes)
     {:id name}))
 
+(defn set-attrs
+  [domain-name id record]
+  (simpledb/put-attributes
+    :domain-name domain-name
+    :item-name id
+    :attributes (map->attrs record)))
+
 (defn select-count
   [expr consistent?]
   (-> (simpledb/select :select-expression expr
@@ -33,3 +40,16 @@
       first
       :value
       bigint))
+
+(defn select-all
+  [expr consistent?]
+  (loop [all []
+         result (simpledb/select :select-expression expr
+                                 :consistent-read consistent?)]
+    (let [{:keys [next-token items]} result
+          all (into all items)]
+      (if-not (some? next-token)
+        all
+        (recur all (simpledb/select :select-expression expr
+                                    :consistent-read consistent?
+                                    :next-token next-token))))))

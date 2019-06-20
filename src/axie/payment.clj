@@ -18,23 +18,17 @@
       (supdate {:amount #(some-> % bigdec)})))
 
 (defn add-payment
-  [{:keys [product status txid addr]}]
+  [pymt]
   (let [id (uuid/v4)]
     (simpledb/put-attributes
       :domain-name (domain-name)
       :item-name id
-      :attributes (sdb/map->attrs {:product product
-                                   :status status
-                                   :txid txid
-                                   :addr addr}))
+      :attributes (sdb/map->attrs pymt))
     id))
 
 (defn set-attrs
   [id record]
-  (simpledb/put-attributes
-    :domain-name (domain-name)
-    :item-name id
-    :attributes (sdb/map->attrs record)))
+  (sdb/set-attrs (domain-name) id record))
 
 (defn set-status
   [id status]

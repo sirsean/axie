@@ -21,7 +21,7 @@
 
 (defstate cryptonator
   :start {:eth (atom nil)
-          :timer (tt/every! 10 refresh-ticker)}
+          :timer (tt/every! 60 refresh-ticker)}
   :stop (tt/cancel! (:timer cryptonator)))
 
 (defn refresh-ticker

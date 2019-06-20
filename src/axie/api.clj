@@ -1,5 +1,6 @@
 (ns axie.api
   (:require
+    [clojure.tools.logging :as log]
     [aleph.http :as http]
     [byte-streams :as bs]
     [camel-snake-kebab.core :refer [->kebab-case-keyword ->camelCaseString]]
@@ -317,6 +318,7 @@
 
 (defn fetch-json
   [url & [opts]]
+  (log/infof "GET %s" url)
   (md/chain
     (http/get url (or opts {}))
     body->json))
@@ -362,8 +364,9 @@
   [address]
   (fetch-pages (partial fetch-addr-page address)))
 
-(defn fetch-activity-points
+(defn fetch-activity-points-page
   [ids]
+  (log/infof "fetching %s activity-points" (count ids))
   (md/chain
     (fetch-json (format "https://api.axieinfinity.com/v1/battle/battle/activity-point?%s"
                         (->> ids
@@ -374,6 +377,14 @@
              (fn [m {:keys [axie-id activity-point]}]
                (assoc m axie-id activity-point))
              {})))
+
+(defn fetch-activity-points
+  [ids]
+  (let [parts (partition-all 100 ids)]
+    (md/chain
+      (apply md/zip (map fetch-activity-points-page parts))
+      (fn [activity-maps]
+        (reduce merge {} activity-maps)))))
 
 (defn attach-activity-points
   [axies]
@@ -528,6 +539,9 @@
   [{:keys [eth-addr token max-teams]}]
   (md/chain
     (fetch-teams-for eth-addr)
+    (fn [teams]
+      (log/infof "got teams: %s" (count teams))
+      teams)
     #(->> %
           (sort-by :name)
           ((if (some? max-teams) (partial take max-teams) identity))
@@ -540,14 +554,16 @@
           (if-not team
             {:success success
              :failure failure}
-            (->
-              (md/chain (start-battle-for token (:team-id team))
-                        (fn [_]
-                          (Thread/sleep 100)
-                          (md/recur (inc success) failure more)))
-              (md/catch Exception (fn [e]
-                                    (println "fail" (:team-id team) (-> e ex-data :body bs/to-string))
-                                    (md/recur success (inc failure) more))))))))))
+            (do
+              (log/infof "team: %s" team)
+              (->
+                (md/chain (start-battle-for token (:team-id team))
+                          (fn [_]
+                            (Thread/sleep 100)
+                            (md/recur (inc success) failure more)))
+                (md/catch Exception (fn [e]
+                                      (log/errorf "failed to start battle, %s: %s" (:team-id team) (-> e ex-data :body bs/to-string))
+                                      (md/recur success (inc failure) more)))))))))))
 
 (defn start-battles
   []
