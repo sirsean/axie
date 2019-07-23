@@ -423,10 +423,11 @@
 
 (defn team-ready-in
   [{:keys [team-members]}]
-  (->> team-members
-       (map :activity-point)
-       (apply min)
-       (- 240)))
+  (some->> team-members
+           (map :activity-point)
+           seq
+           (apply min)
+           (- 240)))
 
 (defn fetch-teams-page
   [eth-addr offset]
