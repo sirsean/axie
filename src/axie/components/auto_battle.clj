@@ -11,7 +11,8 @@
 
 (defn start-customer
   [customer]
-  (let [max-teams (ab/->max-teams customer)]
+  ;; TODO: temporarily unlimited for all, no expiration
+  (let [max-teams nil #_(ab/->max-teams customer)]
     (try
       (let [num-started @(axie/start-battles-for
                            {:eth-addr (:id customer)

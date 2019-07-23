@@ -6,6 +6,7 @@
     [mount-up.core :as mu]
     [amazonica.aws.simpledb :as simpledb]
     [axie.cmd :as cmd]
+    [axie.auto-battle :as auto-battle]
     [axie.components.config :as config]
     [axie.components.axie-db :as axie-db]
     [axie.components.cryptonator]
