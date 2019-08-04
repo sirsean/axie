@@ -13,6 +13,7 @@
     [axie.components.server]
     [axie.components.payment-processor]
     [axie.components.auto-battle]
+    [axie.components.battle-history]
     ))
 
 (mu/on-upndown :info mu/log :before)
