@@ -110,3 +110,9 @@
                  addr
                  {:max-teams max-teams
                   :until (some-> until format-date)}))
+
+(defn delete
+  [addr]
+  (simpledb/delete-attributes
+    :domain-name (domain-name)
+    :item-name (string/lower-case addr)))

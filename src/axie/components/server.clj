@@ -7,7 +7,7 @@
     [manifold.deferred :as md]
     [aleph.http :as http]
     [cheshire.generate]
-    [compojure.core :as compojure :refer [ANY POST GET]]
+    [compojure.core :as compojure :refer [ANY POST GET DELETE]]
     [ring.util.http-response :as http-response]
     [ring.middleware.json :refer [wrap-json-response]]
     [ring.middleware.resource :refer [wrap-resource]]
@@ -77,6 +77,9 @@
             (auto-battle/signup {:addr addr
                                  :token token})
             (json-response (auto-battle/fetch-customer addr))))
+    (DELETE "/auto-battle/deactivate" {:keys [addr]}
+            (auto-battle/delete addr)
+            (json-response {}))
     (GET "/family-tree/views" {:keys [addr]}
          (-> addr
              family-tree/fetch-views
