@@ -2,7 +2,7 @@
   (:require
     [byte-streams :as bs]
     [clojure.tools.logging :as log]
-    [mount.core :refer [defstate]]
+    [mount.core :refer [defstate] :as mount]
     [tea-time.core :as tt]
     [axie.components.timer :refer [timer]]
     [axie.api :as axie]
@@ -25,13 +25,20 @@
                     (:name customer) (:id customer)
                     (some-> e ex-data :body bs/to-string))))))
 
-(defn start-all-battles
-  []
-  (loop [[customer & more] (ab/fetch-customers)]
-    (when (some? customer)
-      (start-customer customer)
-      (recur more))))
+(declare start-all-battles)
 
 (defstate auto-battle
   :start (tt/every! 120 start-all-battles)
   :stop (tt/cancel! auto-battle))
+
+(defn running?
+  []
+  (some? ((mount/running-states) (str #'auto-battle))))
+
+(defn start-all-battles
+  []
+  (log/info "start-all-battles")
+  (loop [[customer & more] (ab/fetch-customers)]
+    (when (and (running?) (some? customer))
+      (start-customer customer)
+      (recur more))))
