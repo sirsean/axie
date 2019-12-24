@@ -15,6 +15,7 @@
     [ring.middleware.cors :refer [wrap-cors]]
     [axie.api :refer [body->json]]
     [axie.components.axie-db :as axie-db]
+    [axie.components.card-rankings :as card-rankings]
     [axie.components.config]
     [axie.middleware.web3 :refer [wrap-web3-auth]]
     [axie.account :as account]
@@ -36,6 +37,10 @@
 
 (def api-routes
   (compojure/routes
+    (GET "/card-rankings" _
+         (json-response (card-rankings/get-rankings)))
+    (POST "/card-rankings/:winner/:loser" [winner loser]
+          (json-response (card-rankings/vote winner loser)))
     (GET "/prices/auto-battle" _
          (json-response (auto-battle/price-list)))
     (GET "/prices/family-tree" _

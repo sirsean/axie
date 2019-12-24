@@ -25,13 +25,14 @@
 
 (declare load-battles)
 
-(defstate battle-history
+#_(defstate battle-history
   :start (tt/every! 60 load-battles)
   :stop (tt/cancel! battle-history))
 
 (defn running?
   []
-  (some? ((mount/running-states) (str #'battle-history))))
+  false
+  #_(some? ((mount/running-states) (str #'battle-history))))
 
 (defn load-battles
   []
