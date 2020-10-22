@@ -3,7 +3,6 @@
     [axie.api :as api]
     [axie.sdb :as sdb]
     [axie.account :as account]
-    [axie.battle-history :as battle-history]
     [axie.payment :as payment]
     [amazonica.aws.simpledb :as simpledb]
     [cli-matic.core :as cli]
@@ -13,7 +12,6 @@
 (defn create-domains
   [& _]
   (doseq [domain [(account/domain-name)
-                  (battle-history/domain-name)
                   (payment/domain-name)]]
     (println "creating" domain)
     (simpledb/create-domain :domain-name domain)))
