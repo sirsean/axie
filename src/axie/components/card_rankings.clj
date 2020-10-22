@@ -5,15 +5,12 @@
     [mount.core :refer [defstate]]
     [tea-time.core :as tt]
     [axie.api :refer [fetch-json]]
+    [axie.components.cards :as cards]
     [amazonica.aws.s3 :as s3]
     [cheshire.core :as json]
     [camel-snake-kebab.core :refer [->kebab-case-keyword]]
     [vvvvalvalval.supdate.api :refer [supdate]]
     ))
-
-(defn fetch-cards
-  []
-  (fetch-json "https://storage.googleapis.com/axie-cdn/game/cards/card-abilities.json"))
 
 (defn fetch-ratings
   []
@@ -44,11 +41,9 @@
 (declare flush-ratings)
 
 (defstate card-rankings
-  :start (let [cards @(fetch-cards)
-               ratings (fetch-ratings)]
+  :start (let [ratings (fetch-ratings)]
            {:timer (tt/every! 600 flush-ratings)
-            :cards cards
-            :ratings (atom (merge (default-ratings cards)
+            :ratings (atom (merge (default-ratings (cards/get-cards))
                                   ratings))})
   :stop (let [ratings @(:ratings card-rankings)]
           (save-ratings ratings)
@@ -94,7 +89,7 @@
        (sort-by (fn [[card-key rating]]
                   [(- rating) card-key]))
        (map-indexed (fn [i [card-key rating]]
-                      (-> (get (:cards card-rankings) card-key)
+                      (-> (get (cards/get-cards) card-key)
                           (assoc :id     card-key
                                  :rank   (inc i)
                                  :rating rating))))))

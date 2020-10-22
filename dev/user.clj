@@ -15,6 +15,7 @@
     [axie.components.auto-battle]
     #_[axie.components.battle-history]
     [axie.components.card-rankings]
+    [axie.components.cards]
     ))
 
 (mu/on-upndown :info mu/log :before)

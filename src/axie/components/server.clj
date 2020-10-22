@@ -16,6 +16,7 @@
     [axie.api :refer [body->json]]
     [axie.components.axie-db :as axie-db]
     [axie.components.card-rankings :as card-rankings]
+    [axie.components.cards :as cards]
     [axie.components.config]
     [axie.middleware.web3 :refer [wrap-web3-auth]]
     [axie.account :as account]
@@ -37,6 +38,8 @@
 
 (def api-routes
   (compojure/routes
+    (GET "/cards" _
+         (json-response (cards/get-cards)))
     (GET "/card-rankings" _
          (json-response (card-rankings/get-rankings)))
     (POST "/card-rankings/:winner/:loser" [winner loser]
