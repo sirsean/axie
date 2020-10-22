@@ -20,7 +20,6 @@
     [axie.components.config]
     [axie.middleware.web3 :refer [wrap-web3-auth]]
     [axie.account :as account]
-    [axie.auto-battle :as auto-battle]
     [axie.family-tree :as family-tree]
     [axie.payment :as payment]
     ))
@@ -44,8 +43,6 @@
          (json-response (card-rankings/get-rankings)))
     (POST "/card-rankings/:winner/:loser" [winner loser]
           (json-response (card-rankings/vote winner loser)))
-    (GET "/prices/auto-battle" _
-         (json-response (auto-battle/price-list)))
     (GET "/prices/family-tree" _
          (json-response (family-tree/price-list)))
     (GET "/ping" []
@@ -58,10 +55,6 @@
            (-> acct
                (assoc :family-tree-views (family-tree/fetch-num-views addr))
                json-response)
-           (http-response/not-found)))
-    (GET "/account/auto-battle" {:keys [addr]}
-         (if-some [acct (auto-battle/fetch-customer addr)]
-           (json-response acct)
            (http-response/not-found)))
     (POST "/register" {:keys [addr]}
           (do
@@ -80,14 +73,6 @@
                 (json-response {:id payment-id
                                 :txid txid}))
               (http-response/unprocessable-entity))))
-    (POST "/auto-battle/signup" {:keys [addr] :as req}
-          (let [{:keys [token]} (body->json req)]
-            (auto-battle/signup {:addr addr
-                                 :token token})
-            (json-response (auto-battle/fetch-customer addr))))
-    (DELETE "/auto-battle/deactivate" {:keys [addr]}
-            (auto-battle/delete addr)
-            (json-response {}))
     (GET "/family-tree/views" {:keys [addr]}
          (-> addr
              family-tree/fetch-views

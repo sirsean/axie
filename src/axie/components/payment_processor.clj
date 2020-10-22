@@ -7,7 +7,6 @@
     [tea-time.core :as tt]
     [axie.components.timer :refer [timer]]
     [axie.account :as account]
-    [axie.auto-battle :as auto-battle]
     [axie.payment :as payment]
     [axie.family-tree :as family-tree]
     [axie.ethplorer :as ethplorer]
@@ -23,7 +22,7 @@
 (defn known-product?
   [product]
   (contains?
-    #{"family-tree" "auto-battle"}
+    #{"family-tree"}
     product))
 
 (defn valid?
@@ -44,22 +43,8 @@
                        {:family-tree-paid (+ family-tree-paid
                                              (:views tier))})))
 
-(defmethod process-payment "auto-battle"
-  [p tx]
-  (let [amount (bigdec (:value tx))
-        max-teams (some-> p :max-teams auto-battle/blank->nil bigint)
-        days (-> max-teams
-                 auto-battle/tier-by-max-teams
-                 (auto-battle/calc-days amount))
-        until (tc/plus (tc/today) (tc/days days))]
-    (log/infof "auto-battle (max-teams %s) (days %s) (until %s)" max-teams days until)
-    (auto-battle/upgrade (:addr p)
-                         {:max-teams max-teams
-                          :until until})))
-
 (defn process-pending
   []
-  #_(log/info "process-pending")
   (doseq [p (payment/fetch-pending)]
     (log/infof "payment (%s)" p)
     (let [tx @(ethplorer/get-tx-info (:txid p))]

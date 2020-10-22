@@ -3,7 +3,6 @@
     [axie.api :as api]
     [axie.sdb :as sdb]
     [axie.account :as account]
-    [axie.auto-battle :as auto-battle]
     [axie.battle-history :as battle-history]
     [axie.family-tree :as family-tree]
     [axie.payment :as payment]
@@ -15,7 +14,6 @@
 (defn create-domains
   [& _]
   (doseq [domain [(account/domain-name)
-                  (auto-battle/domain-name)
                   (battle-history/domain-name)
                   (family-tree/views-domain-name)
                   (payment/domain-name)]]
