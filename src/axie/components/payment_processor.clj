@@ -8,7 +8,6 @@
     [axie.components.timer :refer [timer]]
     [axie.account :as account]
     [axie.payment :as payment]
-    [axie.family-tree :as family-tree]
     [axie.ethplorer :as ethplorer]
     ))
 
@@ -22,7 +21,7 @@
 (defn known-product?
   [product]
   (contains?
-    #{"family-tree"}
+    #{}
     product))
 
 (defn valid?
@@ -34,14 +33,9 @@
   (fn [p tx]
     (:product p)))
 
-(defmethod process-payment "family-tree"
+(defmethod process-payment :default
   [p tx]
-  (let [tier (family-tree/closest-tier (bigdec (:value tx)))
-        {:keys [family-tree-paid]} (account/fetch (:addr p))]
-    (log/infof "family-tree tier (%s)" tier)
-    (account/set-attrs (:addr p)
-                       {:family-tree-paid (+ family-tree-paid
-                                             (:views tier))})))
+  (log/info "unknown payment" tx))
 
 (defn process-pending
   []

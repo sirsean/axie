@@ -20,7 +20,6 @@
     [axie.components.config]
     [axie.middleware.web3 :refer [wrap-web3-auth]]
     [axie.account :as account]
-    [axie.family-tree :as family-tree]
     [axie.payment :as payment]
     ))
 
@@ -43,8 +42,6 @@
          (json-response (card-rankings/get-rankings)))
     (POST "/card-rankings/:winner/:loser" [winner loser]
           (json-response (card-rankings/vote winner loser)))
-    (GET "/prices/family-tree" _
-         (json-response (family-tree/price-list)))
     (GET "/ping" []
          (json-response {:ok true}))))
 
@@ -53,7 +50,6 @@
     (GET "/account" {:keys [addr]}
          (if-some [acct (account/fetch addr)]
            (-> acct
-               (assoc :family-tree-views (family-tree/fetch-num-views addr))
                json-response)
            (http-response/not-found)))
     (POST "/register" {:keys [addr]}
@@ -61,7 +57,6 @@
             (account/set-attrs addr {:registered true})
             (-> addr
                 account/fetch
-               (assoc :family-tree-views (family-tree/fetch-num-views addr))
                 json-response)))
     (POST "/pay" {:keys [addr] :as req}
           (let [{:keys [product txid] :as pymt} (body->json req)]
@@ -73,24 +68,7 @@
                 (json-response {:id payment-id
                                 :txid txid}))
               (http-response/unprocessable-entity))))
-    (GET "/family-tree/views" {:keys [addr]}
-         (-> addr
-             family-tree/fetch-views
-             json-response))
-    (GET "/family-tree/:axie-id" {{:keys [axie-id]} :params
-                                  addr :addr}
-         ;; have they already viewed it, or do they have enough paid views left?
-         (if (or (family-tree/viewed? addr axie-id)
-                 (let [{:keys [family-tree-paid]} (account/fetch addr)
-                       num-views (family-tree/fetch-num-views addr)]
-                   (< num-views family-tree-paid)))
-           (do
-             (family-tree/view! addr axie-id)
-             (md/chain
-               (axie-db/fetch axie-id)
-               family-tree/family-tree
-               json-response))
-           (http-response/payment-required)))))
+    ))
 
 (def handler
   (compojure/routes

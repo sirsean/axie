@@ -11,14 +11,14 @@
   (format "axie.%s.accounts" (name (cfg/get :env))))
 
 (def defaults
-  {:family-tree-paid 3})
+  {})
 
 (defn item->record
   [item]
   (-> item
       sdb/item->record
       ((partial merge defaults))
-      (supdate {:family-tree-paid bigint})))
+      ))
 
 (defn fetch
   [addr]

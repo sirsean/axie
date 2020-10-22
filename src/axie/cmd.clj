@@ -4,7 +4,6 @@
     [axie.sdb :as sdb]
     [axie.account :as account]
     [axie.battle-history :as battle-history]
-    [axie.family-tree :as family-tree]
     [axie.payment :as payment]
     [amazonica.aws.simpledb :as simpledb]
     [cli-matic.core :as cli]
@@ -15,7 +14,6 @@
   [& _]
   (doseq [domain [(account/domain-name)
                   (battle-history/domain-name)
-                  (family-tree/views-domain-name)
                   (payment/domain-name)]]
     (println "creating" domain)
     (simpledb/create-domain :domain-name domain)))
