@@ -38,7 +38,7 @@
 (defn start-all-battles
   []
   (log/info "start-all-battles")
-  (loop [[customer & more] (ab/fetch-customers)]
+  #_(loop [[customer & more] (ab/fetch-customers)]
     (when (and (running?) (some? customer))
       (start-customer customer)
       (recur more))))
