@@ -73,9 +73,10 @@
         loser-rating (get ratings loser-key)
         winner-prob (prob winner-rating loser-rating)
         loser-prob (prob loser-rating winner-rating)]
-    (supdate ratings
-             {winner-key #(new-rating % winner-prob true)
-              loser-key  #(new-rating % loser-prob false)})))
+    (-> (default-ratings (cards/get-cards))
+        (merge ratings)
+        (supdate {winner-key #(new-rating % winner-prob true)
+                  loser-key  #(new-rating % loser-prob false)}))))
 
 (defn vote
   [winner-key loser-key]
