@@ -38,10 +38,12 @@
   (compojure/routes
     (GET "/cards" _
          (json-response (cards/get-cards)))
-    (GET "/card-rankings" _
-         (json-response (card-rankings/get-rankings)))
-    (POST "/card-rankings/:winner/:loser" [winner loser]
-          (json-response (card-rankings/vote winner loser)))
+    (GET "/card-rankings/:rating-type" [rating-type]
+         (json-response (card-rankings/get-rankings (keyword rating-type))))
+    (GET "/card-rankings/defense" _
+         (json-response (card-rankings/get-rankings :defense)))
+    (POST "/card-rankings/:rating-type/:winner/:loser" [rating-type winner loser]
+          (json-response (card-rankings/vote (keyword rating-type) winner loser)))
     (GET "/ping" []
          (json-response {:ok true}))))
 

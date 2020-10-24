@@ -12,11 +12,19 @@
     [vvvvalvalval.supdate.api :refer [supdate]]
     ))
 
+(defn rating-type->filename
+  [rating-type]
+  (case rating-type
+    :attack "card-ratings-attack.json"
+    :defense "card-ratings-defense.json"
+    "card-ratings.json"))
+
 (defn fetch-ratings
-  []
+  [rating-type]
   (log/info :fetch-ratings)
   (try
-    (-> (s3/get-object "axie-customers" "card-ratings.json")
+    (-> (s3/get-object "axie-customers"
+                       (rating-type->filename rating-type))
         :input-stream
         slurp
         (json/parse-string ->kebab-case-keyword))
@@ -24,10 +32,10 @@
       {})))
 
 (defn save-ratings
-  [ratings]
+  [rating-type ratings]
   (log/info :save-ratings)
   (s3/put-object :bucket-name  "axie-customers"
-                 :key          "card-ratings.json"
+                 :key          (rating-type->filename rating-type)
                  :input-stream (-> ratings
                                    json/generate-string
                                    bs/to-input-stream)))
@@ -38,22 +46,33 @@
     (keys cards)
     (repeat 1000)))
 
+(defn ratings-with-defaults
+  [ratings]
+  (merge (default-ratings (cards/get-cards))
+         ratings))
+
 (declare flush-ratings)
 
 (defstate card-rankings
-  :start (let [ratings (fetch-ratings)]
-           {:timer (tt/every! 600 flush-ratings)
-            :ratings (atom (merge (default-ratings (cards/get-cards))
-                                  ratings))})
-  :stop (let [ratings @(:ratings card-rankings)]
-          (save-ratings ratings)
+  :start {:timer (tt/every! 600 flush-ratings)
+          :ratings (atom (ratings-with-defaults (fetch-ratings :all)))
+          :attack-ratings (atom (ratings-with-defaults (fetch-ratings :attack)))
+          :defense-ratings (atom (ratings-with-defaults (fetch-ratings :defense)))}
+  :stop (do
+          (save-ratings :all @(:ratings card-rankings))
+          (save-ratings :attack @(:attack-ratings card-rankings))
+          (save-ratings :defense @(:defense-ratings card-rankings))
           (tt/cancel! (:timer card-rankings))
           {}))
 
 (defn flush-ratings
   []
   (when-some [ratings (:ratings card-rankings)]
-    (save-ratings @ratings)))
+    (save-ratings :all @ratings))
+  (when-some [attack-ratings (:attack-ratings card-rankings)]
+    (save-ratings :attack @attack-ratings))
+  (when-some [defense-ratings (:defense-ratings card-rankings)]
+    (save-ratings :defense @defense-ratings)))
 
 (def k 20)
 
@@ -73,19 +92,26 @@
         loser-rating (get ratings loser-key)
         winner-prob (prob winner-rating loser-rating)
         loser-prob (prob loser-rating winner-rating)]
-    (-> (default-ratings (cards/get-cards))
-        (merge ratings)
+    (-> (ratings-with-defaults ratings)
         (supdate {winner-key #(new-rating % winner-prob true)
                   loser-key  #(new-rating % loser-prob false)}))))
 
+(defn rating-type->ratings-key
+  [rating-type]
+  (case rating-type
+    :attack :attack-ratings
+    :defense :defense-ratings
+    :ratings))
+
 (defn vote
-  [winner-key loser-key]
-  (swap! (:ratings card-rankings) record-vote winner-key loser-key))
+  [rating-type winner-key loser-key]
+  (let [rating-key (rating-type->ratings-key rating-type)]
+    (swap! (get card-rankings rating-key) record-vote winner-key loser-key)))
 
 (defn get-rankings
-  []
+  [rating-type]
   (->> card-rankings
-       :ratings
+       ((rating-type->ratings-key rating-type))
        deref
        (sort-by (fn [[card-key rating]]
                   [(- rating) card-key]))
