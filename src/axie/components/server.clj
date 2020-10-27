@@ -16,6 +16,7 @@
     [axie.api :refer [body->json]]
     [axie.components.axie-db :as axie-db]
     [axie.components.card-rankings :as card-rankings]
+    [axie.components.combo-rankings :as combo-rankings]
     [axie.components.cards :as cards]
     [axie.components.config]
     [axie.middleware.web3 :refer [wrap-web3-auth]]
@@ -44,6 +45,12 @@
          (json-response (card-rankings/get-rankings :defense)))
     (POST "/card-rankings/:rating-type/:winner/:loser" [rating-type winner loser]
           (json-response (card-rankings/vote (keyword rating-type) winner loser)))
+    (GET "/combo-rankings" _
+         (json-response (combo-rankings/get-rankings)))
+    (POST "/combo-rankings/:combo-key" [combo-key]
+          (json-response (combo-rankings/add-combo combo-key)))
+    (POST "/combo-rankings/:winner/:loser" [winner loser]
+          (json-response (combo-rankings/vote winner loser)))
     (GET "/ping" []
          (json-response {:ok true}))))
 

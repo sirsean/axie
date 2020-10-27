@@ -1,15 +1,10 @@
 (ns axie.components.card-rankings
   (:require
     [clojure.tools.logging :as log]
-    [byte-streams :as bs]
     [mount.core :refer [defstate]]
     [tea-time.core :as tt]
-    [axie.api :refer [fetch-json]]
+    [axie.elo :as elo]
     [axie.components.cards :as cards]
-    [amazonica.aws.s3 :as s3]
-    [cheshire.core :as json]
-    [camel-snake-kebab.core :refer [->kebab-case-keyword]]
-    [vvvvalvalval.supdate.api :refer [supdate]]
     ))
 
 (defn rating-type->filename
@@ -18,27 +13,6 @@
     :attack "card-ratings-attack.json"
     :defense "card-ratings-defense.json"
     "card-ratings.json"))
-
-(defn fetch-ratings
-  [rating-type]
-  (log/info :fetch-ratings)
-  (try
-    (-> (s3/get-object "axie-customers"
-                       (rating-type->filename rating-type))
-        :input-stream
-        slurp
-        (json/parse-string ->kebab-case-keyword))
-    (catch Exception e
-      {})))
-
-(defn save-ratings
-  [rating-type ratings]
-  (log/info :save-ratings)
-  (s3/put-object :bucket-name  "axie-customers"
-                 :key          (rating-type->filename rating-type)
-                 :input-stream (-> ratings
-                                   json/generate-string
-                                   bs/to-input-stream)))
 
 (defn default-ratings
   [cards]
@@ -55,46 +29,30 @@
 
 (defstate card-rankings
   :start {:timer (tt/every! 600 flush-ratings)
-          :ratings (atom (ratings-with-defaults (fetch-ratings :all)))
-          :attack-ratings (atom (ratings-with-defaults (fetch-ratings :attack)))
-          :defense-ratings (atom (ratings-with-defaults (fetch-ratings :defense)))}
+          :ratings (atom (ratings-with-defaults
+                           (elo/fetch-ratings (rating-type->filename :all))))
+          :attack-ratings (atom (ratings-with-defaults
+                                  (elo/fetch-ratings (rating-type->filename :attack))))
+          :defense-ratings (atom (ratings-with-defaults
+                                   (elo/fetch-ratings (rating-type->filename :defense))))}
   :stop (do
-          (save-ratings :all @(:ratings card-rankings))
-          (save-ratings :attack @(:attack-ratings card-rankings))
-          (save-ratings :defense @(:defense-ratings card-rankings))
+          (elo/save-ratings (rating-type->filename :all)
+                        @(:ratings card-rankings))
+          (elo/save-ratings (rating-type->filename :attack)
+                        @(:attack-ratings card-rankings))
+          (elo/save-ratings (rating-type->filename :defense)
+                        @(:defense-ratings card-rankings))
           (tt/cancel! (:timer card-rankings))
           {}))
 
 (defn flush-ratings
   []
   (when-some [ratings (:ratings card-rankings)]
-    (save-ratings :all @ratings))
+    (elo/save-ratings (rating-type->filename :all) @ratings))
   (when-some [attack-ratings (:attack-ratings card-rankings)]
-    (save-ratings :attack @attack-ratings))
+    (elo/save-ratings (rating-type->filename :attack) @attack-ratings))
   (when-some [defense-ratings (:defense-ratings card-rankings)]
-    (save-ratings :defense @defense-ratings)))
-
-(def k 20)
-
-(defn prob
-  [r1 r2]
-  (/ 1M (+ 1M (Math/pow 10 (/ (- r1 r2) 400M)))))
-
-(defn new-rating
-  [r p win?]
-  (+ r (* k (- (if win? 1 0) p))))
-
-(defn record-vote
-  [ratings winner-key loser-key]
-  (let [winner-key (keyword winner-key)
-        loser-key (keyword loser-key)
-        winner-rating (get ratings winner-key)
-        loser-rating (get ratings loser-key)
-        winner-prob (prob winner-rating loser-rating)
-        loser-prob (prob loser-rating winner-rating)]
-    (-> (ratings-with-defaults ratings)
-        (supdate {winner-key #(new-rating % winner-prob true)
-                  loser-key  #(new-rating % loser-prob false)}))))
+    (elo/save-ratings (rating-type->filename :defense) @defense-ratings)))
 
 (defn rating-type->ratings-key
   [rating-type]
@@ -106,7 +64,9 @@
 (defn vote
   [rating-type winner-key loser-key]
   (let [rating-key (rating-type->ratings-key rating-type)]
-    (swap! (get card-rankings rating-key) record-vote winner-key loser-key)))
+    (swap! (get card-rankings rating-key)
+           elo/record-vote
+           (default-ratings (cards/get-cards)) winner-key loser-key)))
 
 (defn get-rankings
   [rating-type]

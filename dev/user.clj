@@ -12,6 +12,7 @@
     [axie.components.server]
     [axie.components.payment-processor]
     [axie.components.card-rankings]
+    [axie.components.combo-rankings]
     [axie.components.cards]
     ))
 
