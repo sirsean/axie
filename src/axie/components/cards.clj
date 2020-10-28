@@ -23,9 +23,17 @@
     "Laggingggggg"      "Laggin"
     body-part-name))
 
+(defn adjust-card-ability-part-name
+  [part-name]
+  (case part-name
+    "Thorny Cattepilar" "Thorny Caterpillar"
+    part-name))
+
 (defn body-parts->map
   [body-parts]
   (->> body-parts
+       (filter (fn [{:keys [type]}]
+                 (contains? #{"horn" "mouth" "back" "tail"} type)))
        (mapcat (fn [{:keys [name] :as body-part}]
                  (->> (string/split name #",")
                       (map string/trim)
@@ -43,8 +51,14 @@
     (fn [[card-abilities body-parts]]
       (let [name->part (body-parts->map body-parts)]
         (->> card-abilities
-             (map (fn [[id {:keys [part-name] :as card}]]
-                    [id (merge card (get name->part part-name))]))
+             (mapcat (fn [[id {:keys [part-name] :as card}]]
+                       (->> (string/split part-name #",")
+                            (map string/trim)
+                            (map adjust-card-ability-part-name)
+                            (map (fn [split-part-name]
+                                   (assoc card :part-name split-part-name))))))
+             (map (fn [{:keys [id part-name] :as card}]
+                    [(keyword id) (merge card (get name->part part-name))]))
              (into {}))))))
 
 (declare refresh-cards)
