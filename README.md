@@ -2,6 +2,8 @@
 
 This interacts with the Axie Infinity API.
 
+NOTE: most of this is probably deprecated and not working.
+
 You can use it to look for axies for sale in a way that's not possible
 through their filter UI. For example, you can sort in descending order
 by attack, defense, attack+defense, each individual stat, purity, and at
